@@ -1,0 +1,74 @@
+language: cpp
+dist: Xenial
+services:
+- xvfb
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - sourceline: ppa:beineri/opt-qt-5.12.2-xenial
+    update: true
+    packages:
+    - qt512-meta-full
+    - qt512base
+    - qt512tools
+    - gcc-9
+    - g++-9
+    - libc6-i386
+    - libgl-dev
+    - libgl1-mesa-dev
+    - mesa-common-dev
+env:
+before_install: 
+install:
+- if [ "${TRAVIS_OS_NAME}" = "windows" ]; then choco install  python --version 3.8.0;fi
+- if [ "${TRAVIS_OS_NAME}" = "windows" ]; then export env=PATH=/c/Python38:/c/Python38/Scripts:$PATH;fi
+- if [ "${TRAVIS_OS_NAME}" = "windows" ]; then /c/Python38/python.exe -m pip install --upgrade pip;fi
+- if [ "${TRAVIS_OS_NAME}" = "windows" ]; then /c/Python38/python.exe -m pip install aqtinstall;fi
+- if [ "${TRAVIS_OS_NAME}" = "windows" ]; then /c/Python38/python.exe -m aqt install --outputdir /C/Qt 5.12.2 windows desktop win64_msvc2017_64 -m qtwebengine;fi
+- if [ "${TRAVIS_OS_NAME}" = "linux" ]; then wget -c -nv https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage;fi
+- if [ "${TRAVIS_OS_NAME}" = "linux" ]; then chmod a+x linuxdeployqt-continuous-x86_64.AppImage;fi
+script:
+- if [ "${TRAVIS_OS_NAME}" = "linux" ]; then /opt/qt512/bin/qt512-env.sh;fi
+- if [ "${TRAVIS_OS_NAME}" = "linux" ]; then /opt/qt512/bin/qmake --version;fi
+- if [ "${TRAVIS_OS_NAME}" = "linux" ]; then /opt/qt512/bin/qmake;fi
+- if [ "${TRAVIS_OS_NAME}" = "linux" ]; then make -j$(nproc);fi
+- if [ "${TRAVIS_OS_NAME}" = "linux" ]; then ${TRAVIS_BUILD_DIR}/linuxdeployqt-continuous-x86_64.AppImage ${TRAVIS_BUILD_DIR}/partkeeprTools.desktop
+  -verbose=1 -appimage -qmake=/opt/qt512/bin/qmake;fi
+- export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
+- if [ "${TRAVIS_OS_NAME}" = "linux" ]; then  mv partkeeprTools*.AppImage partkeeprTools-${TRAVIS_TAG}.AppImage;fi
+- if [ "${TRAVIS_OS_NAME}" = "windows" ]; then cmd //c winbuild.bat;fi
+
+- if [ "$TRAVIS_OS_NAME" = "windows" ]; then 
+    choco install zip
+    && cd release
+    && ls
+    && zip partkeeprTools-${TRAVIS_TAG} -r *
+  ;
+  fi
+before_deploy:
+ - if [ "${TRAVIS_OS_NAME}" = "windows" ]; then export RELEASE_FILE="${TRAVIS_BUILD_DIR}\release\partkeeprTools-${TRAVIS_TAG}.zip";fi
+ - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then export RELEASE_FILE="${TRAVIS_BUILD_DIR}/partkeeprTools-${TRAVIS_TAG}.AppImage";fi
+deploy:
+  provider: releases
+  api_key:
+    secure: g1GEvHM+ByyLYHA0Msoendoxrr8vQGNEcOSkoLW6pXb9vNSX55eRuFh95JokuC8BGQ/GHIQQJYyun0SW0OsAtbL2RgKU8somtIgkUj0EEWOrUN+g+hy+DbtIuBbOOuyL/wsjmVTIlOEXmKMhabv2uiJ5rnmerM6x+xrIDlpCWZeg4JFnoMRXfCyV8t+55zigI49WknFSbCwo7Ywr4EPQFKGyXRFYeWTDt4MOW9aSXbRIjDLd9lrAzVp8qImixa8JjEseamwkMgjrTZ617AJFQdFi3FNhsQoMKvpN1Oa4qqc0UohRaXj49AUZvXWNVdyfTweaNMkfjVH9PIOunN0u+WiwutVuFtQ+N3BWOeDK10qfT+x9TwMXH/2fFxxHZS+lyCyvYkwbmhApLpn1gauDKLS2vmcp+nQjEUQtszdtbtnRD585UoDzrjOkSDvacncha8Sgjpn6usyzKuno5W6Mqw2FvDwL2aktqC113zz+JjIsAS3BYF3d73P7QEQ4ny7in+n9/JJKS+3nMKE9eULkt257zWJT7ml+OWkx+s//W7tPhiNuVX8J7UAReyX6052lgyKYpm69epU/HHbzvIZl/4lnf2Z4RDCTlO22OLnstrONTlQwgADHRhd+fH4azE6sV9+IHa0x8OU/B0uvfmAkefSCpjLS0voJoIj/N1YzjYU=
+  file: ${RELEASE_FILE}
+  on:
+    repo: PTDreamer/partkeeprTools
+  skip_cleanup: 'true'
+  draft: true
+matrix:
+  include:
+  - os: linux
+    dist: Xenial
+    env:
+    - PATH="/opt/qt512/bin:${PATH}"
+    - RELEASE_FILE="${TRAVIS_BUILD_DIR}/partkeeprTools.AppImage"
+  - os: windows
+    env:
+    - PATH=/c/Qt/5.12.2/msvc2017_64/bin:$PATH
+    - PATH=/c/Python38:/c/Python38/Scripts:$PATH
+    - QT_PLUGIN_PATH=/c/Qt/5.12.2/msvc2017/plugins/
+    - QML_IMPORT_PATH=/c/Qt/5.12.2/msvc2017/qml/
+    - QML2_IMPORT_PATH=/c/Qt/5.12.2/msvc2017/qml/

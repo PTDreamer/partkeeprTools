@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=partkeeprTools
+Comment=A set of tools for the partkeepr application
+Exec=partkeeprTools
+Icon=partkeeprTools
+Categories=Office;
+Name[en_US]=partkeeprTools.desktop

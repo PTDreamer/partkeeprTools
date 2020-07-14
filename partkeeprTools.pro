@@ -33,3 +33,12 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     res.qrc
+
+linux-g++ {
+message("copying assets to $$OUT_PWD")
+copydata.commands = $(COPY) $$PWD/deployment/linux/* $$OUT_PWD
+first.depends = $(first) copydata
+export(first.depends)
+export(copydata.commands)
+QMAKE_EXTRA_TARGETS += first copydata
+}

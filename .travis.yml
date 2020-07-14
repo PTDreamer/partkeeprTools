@@ -47,5 +47,4 @@ matrix:
   - os: linux
     dist: Xenial
     env:
-    - QT_INSTALLER_VARS="${TRAVIS_BUILD_DIR}/vars_linux.js"
     - PATH="/opt/qt512/bin:${PATH}"
